@@ -14,16 +14,16 @@ export const Pagination: React.FC<PaginationProps> = ({
 }) => {
   return (
     <div className="flex items-center justify-between mt-6 px-2">
-      <span className="text-sm text-gray-400 font-mono">
+      <span className="text-sm text-razer-subtext font-mono">
         Page <span className="text-razer-green font-bold">{currentPage}</span>{" "}
-        of <span className="text-white font-bold">{lastPage}</span>
+        of <span className="text-razer-text font-bold">{lastPage}</span>
       </span>
 
       <div className="flex items-center space-x-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex items-center px-3 py-1.5 text-xs font-mono font-bold rounded border border-razer-border bg-razer-card text-white hover:border-razer-green hover:text-razer-green hover:shadow-razer-glow disabled:opacity-40 disabled:hover:border-razer-border disabled:hover:shadow-none transition-all"
+          className="flex items-center px-3 py-1.5 text-xs font-mono font-bold rounded border border-razer-border bg-razer-card text-razer-text hover:border-razer-green hover:text-razer-green hover:shadow-razer-glow disabled:opacity-40 disabled:hover:border-razer-border disabled:hover:shadow-none transition-all"
         >
           <ChevronLeft className="w-4 h-4 mr-1" /> PREV
         </button>
@@ -34,8 +34,8 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => onPageChange(page)}
             className={`px-3 py-1.5 text-xs font-mono font-bold rounded border transition-all ${
               page === currentPage
-                ? "bg-razer-green text-black border-razer-green shadow-razer-glow font-extrabold"
-                : "bg-razer-card border-razer-border text-white hover:border-razer-green hover:text-razer-green"
+                ? "bg-razer-green text-razer-black border-razer-green shadow-razer-glow font-extrabold"
+                : "bg-razer-card border-razer-border text-razer-text hover:border-razer-green hover:text-razer-green"
             }`}
           >
             {page}
@@ -45,7 +45,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === lastPage}
-          className="flex items-center px-3 py-1.5 text-xs font-mono font-bold rounded border border-razer-border bg-razer-card text-white hover:border-razer-green hover:text-razer-green hover:shadow-razer-glow disabled:opacity-40 disabled:hover:border-razer-border disabled:hover:shadow-none transition-all"
+          className="flex items-center px-3 py-1.5 text-xs font-mono font-bold rounded border border-razer-border bg-razer-card text-razer-text hover:border-razer-green hover:text-razer-green hover:shadow-razer-glow disabled:opacity-40 disabled:hover:border-razer-border disabled:hover:shadow-none transition-all"
         >
           NEXT <ChevronRight className="w-4 h-4 ml-1" />
         </button>
