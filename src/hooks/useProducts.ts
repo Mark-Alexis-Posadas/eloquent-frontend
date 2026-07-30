@@ -1,10 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "../api/products";
 
-export const useProducts = (page: number) => {
+interface UseProductsProps {
+  page: number;
+  search?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+}
+
+export const useProducts = ({
+  page,
+  search,
+  category,
+  minPrice,
+  maxPrice,
+  sort,
+}: UseProductsProps) => {
   return useQuery({
-    queryKey: ["products", page],
-    queryFn: () => fetchProducts(page),
-    placeholderData: (previousData) => previousData, // Smooth pagination transitions
+    queryKey: ["products", page, search, category, minPrice, maxPrice, sort],
+    queryFn: () =>
+      fetchProducts({
+        page,
+        search,
+        category,
+        minPrice,
+        maxPrice,
+        sort,
+      }),
+    placeholderData: (previousData) => previousData,
   });
 };
