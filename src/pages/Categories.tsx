@@ -11,55 +11,66 @@ import {
   Loader2,
   ServerCrash,
 } from "lucide-react";
-
-// Types matching Laravel Category response
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  is_active: boolean;
-  products_count?: number;
-}
+import { useCategories } from "../hooks/useCategories";
+import type { Category, CategoryPayload } from "../services/categoryService";
+import CategoryForm from "../components/CategoryModal";
 
 export const CategoriesPage: React.FC = () => {
-  const [searchInput, setSearchInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const {
+    categories,
+    isLoading,
+    isFetching,
+    isError,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    isSubmitting,
+  } = useCategories();
 
-  // Mock data/placeholder state (Palitan mo ng TanStack Query / custom hook mo gaya ng useCategories)
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: 1,
-      name: "Phones",
-      slug: "phones",
-      description: "Smartphones & Mobile Devices",
-      is_active: true,
-      products_count: 12,
-    },
-    {
-      id: 2,
-      name: "Laptops",
-      slug: "laptops",
-      description: "High performance gaming & work laptops",
-      is_active: true,
-      products_count: 8,
-    },
-    {
-      id: 3,
-      name: "Accessories",
-      slug: "accessories",
-      description: "Mice, Keyboards, & Peripherals",
-      is_active: false,
-      products_count: 0,
-    },
-  ]);
+  const [searchInput, setSearchInput] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
 
   const filteredCategories = categories.filter(
     (cat) =>
       cat.name.toLowerCase().includes(searchInput.toLowerCase()) ||
       cat.slug.toLowerCase().includes(searchInput.toLowerCase()),
   );
+
+  const handleOpenCreateModal = () => {
+    setSelectedCategory(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (category: Category) => {
+    setSelectedCategory(category);
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitCategory = async (payload: CategoryPayload) => {
+    try {
+      if (selectedCategory) {
+        await updateCategory({ id: selectedCategory.id, payload });
+      } else {
+        await createCategory(payload);
+      }
+      setIsModalOpen(false);
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Something went wrong!");
+    }
+  };
+
+  const handleDeleteCategory = async (id: number, name: string) => {
+    if (confirm(`Are you sure you want to delete category "${name}"?`)) {
+      try {
+        await deleteCategory(id);
+      } catch (error: any) {
+        alert(error.response?.data?.message || "Failed to delete category.");
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -76,13 +87,22 @@ export const CategoriesPage: React.FC = () => {
         </div>
 
         {/* Action Button */}
-        <button
-          onClick={() => alert("Open Create Category Modal/Drawer")}
-          className="inline-flex items-center justify-center gap-2 rounded bg-razer-green px-4 py-2 text-sm font-bold text-black transition hover:bg-razer-green/80 font-mono shadow-[0_0_10px_rgba(0,255,0,0.2)]"
-        >
-          <Plus className="w-4 h-4" />
-          ADD CATEGORY
-        </button>
+        <div className="flex items-center gap-3">
+          {isFetching && !isLoading && (
+            <div className="flex items-center text-xs font-mono text-razer-green gap-2 bg-razer-darkGreen/40 px-3 py-1.5 rounded border border-razer-green/30">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              REFRESHING
+            </div>
+          )}
+
+          <button
+            onClick={handleOpenCreateModal}
+            className="inline-flex items-center justify-center gap-2 rounded bg-razer-green px-4 py-2 text-sm font-bold text-black transition hover:bg-razer-green/80 font-mono shadow-[0_0_10px_rgba(0,255,0,0.2)]"
+          >
+            <Plus className="w-4 h-4" />
+            ADD CATEGORY
+          </button>
+        </div>
       </div>
 
       {/* Filter / Search Bar */}
@@ -171,14 +191,16 @@ export const CategoriesPage: React.FC = () => {
               {/* Action Buttons */}
               <div className="flex items-center gap-2 mt-5 pt-4 border-t border-razer-border/50">
                 <button
-                  onClick={() => alert(`Edit Category ID: ${category.id}`)}
+                  onClick={() => handleOpenEditModal(category)}
                   className="flex-1 flex items-center justify-center gap-1.5 rounded border border-razer-border bg-razer-bg py-1.5 text-xs font-mono text-zinc-300 hover:border-razer-green hover:text-razer-green transition"
                 >
                   <Edit2 className="w-3.5 h-3.5" /> EDIT
                 </button>
 
                 <button
-                  onClick={() => alert(`Delete Category ID: ${category.id}`)}
+                  onClick={() =>
+                    handleDeleteCategory(category.id, category.name)
+                  }
                   className="flex items-center justify-center rounded border border-red-500/30 bg-red-500/10 p-1.5 text-xs font-mono text-red-400 hover:bg-red-500 hover:text-white transition"
                   title="Delete Category"
                 >
@@ -194,6 +216,16 @@ export const CategoriesPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {isModalOpen && (
+        <CategoryForm
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleSubmitCategory}
+          initialData={selectedCategory}
+          isSubmitting={isSubmitting}
+        />
       )}
     </div>
   );
