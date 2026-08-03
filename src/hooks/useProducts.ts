@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchProducts } from "../api/products";
 
+import { productService } from "../services/productService";
 interface UseProductsProps {
   page: number;
   search?: string;
@@ -21,7 +21,7 @@ export const useProducts = ({
   return useQuery({
     queryKey: ["products", page, search, category, minPrice, maxPrice, sort],
     queryFn: () =>
-      fetchProducts({
+      productService.getProducts({
         page,
         search,
         category,
