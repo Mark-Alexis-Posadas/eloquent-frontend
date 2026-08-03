@@ -1,6 +1,7 @@
 import React from "react";
 // import { useSearchParams } from "react-router-dom";
 import { useProducts } from "../hooks/useProducts";
+import { useCategories } from "../hooks/useCategories"; // 1. Import hook mo
 import { ProductTable } from "../components/ProductTable";
 import { Pagination } from "../components/Pagination";
 import { useProductFilters } from "../hooks/useProductFilters";
@@ -16,6 +17,9 @@ export const ProductsPage: React.FC = () => {
   const { filters, applyFilters, setPage, clearFilters } = useProductFilters();
 
   const { data, isLoading, isFetching, isError } = useProducts(filters);
+
+  const { categories, isLoading: isCategoriesLoading } = useCategories();
+
   const [searchInput, setSearchInput] = React.useState(filters.search);
   const [categoryInput, setCategoryInput] = React.useState<number | undefined>(
     filters.category_id,
@@ -63,11 +67,12 @@ export const ProductsPage: React.FC = () => {
             />
           </div>
 
-          {/* Category */}
+          {/* Category Dropdown */}
           <div className="lg:col-span-3">
             <select
-              className="w-full py-2 px-3 bg-razer-bg border border-razer-border rounded text-sm text-white focus:outline-none focus:border-razer-green"
+              className="w-full py-2 px-3 bg-razer-bg border border-razer-border rounded text-sm text-white focus:outline-none focus:border-razer-green disabled:opacity-50"
               value={categoryInput ?? ""}
+              disabled={isCategoriesLoading}
               onChange={(e) =>
                 setCategoryInput(
                   e.target.value ? Number(e.target.value) : undefined,
@@ -75,17 +80,21 @@ export const ProductsPage: React.FC = () => {
               }
             >
               <option value="" className="bg-razer-card text-white">
-                All Categories
+                {isCategoriesLoading
+                  ? "Loading categories..."
+                  : "All Categories"}
               </option>
-              <option value="1" className="bg-razer-card text-white">
-                Phones
-              </option>
-              <option value="2" className="bg-razer-card text-white">
-                Laptops
-              </option>
-              <option value="3" className="bg-razer-card text-white">
-                Accessories
-              </option>
+
+              {/* 3. Dynamic Render gamit ang categories galing sa hook */}
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                  className="bg-razer-card text-white"
+                >
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
 
