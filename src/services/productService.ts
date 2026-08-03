@@ -11,7 +11,7 @@ export interface ProductParams {
 }
 
 export interface CreateProductPayload {
-  name: string;
+  title: string;
   category_id: number;
   price: number;
   stock: number;

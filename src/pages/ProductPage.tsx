@@ -16,7 +16,7 @@ import {
 
 interface ProductFormData {
   id?: number;
-  name: string;
+  title: string;
   category_id: number;
   price: number;
   stock: number;
@@ -55,7 +55,7 @@ export const ProductsPage: React.FC = () => {
     null,
   );
   const [formData, setFormData] = useState<ProductFormData>({
-    name: "",
+    title: "",
     category_id: 1,
     price: 0,
     stock: 0,
@@ -66,7 +66,7 @@ export const ProductsPage: React.FC = () => {
   const handleOpenCreateModal = () => {
     setEditingProduct(null);
     setFormData({
-      name: "",
+      title: "",
       category_id: categories[0]?.id || 1,
       price: 0,
       stock: 0,
@@ -80,7 +80,7 @@ export const ProductsPage: React.FC = () => {
     setEditingProduct(product);
     setFormData({
       id: product.id,
-      name: product.name,
+      title: product.name,
       category_id: product.category_id,
       price: Number(product.price),
       stock: Number(product.stock),
@@ -294,9 +294,9 @@ export const ProductsPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  value={formData.name}
+                  value={formData.title}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, title: e.target.value })
                   }
                   className="w-full px-3 py-2 bg-razer-bg border border-razer-border rounded text-white focus:outline-none focus:border-razer-green"
                 />
