@@ -1,35 +1,51 @@
 import { api } from "../api/axios";
-import type { PaginatedProductsResponse } from "../types/product";
+import type { PaginatedProductsResponse, Product } from "../types/product";
 
 export interface ProductParams {
   page?: number;
   search?: string;
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
+  category_id?: number;
+  min_price?: number;
+  max_price?: number;
   sort?: string;
 }
 
-export const productService = {
-  getProducts: async ({
-    page = 1,
-    search = "",
-    category = "",
-    minPrice,
-    maxPrice,
-    sort = "",
-  }: ProductParams): Promise<PaginatedProductsResponse> => {
-    const response = await api.get<PaginatedProductsResponse>("/products", {
-      params: {
-        page,
-        search,
-        category,
-        minPrice,
-        maxPrice,
-        sort,
-      },
-    });
+export interface CreateProductPayload {
+  name: string;
+  category_id: number;
+  price: number;
+  stock: number;
+  description?: string;
+}
 
+export interface UpdateProductPayload extends Partial<CreateProductPayload> {
+  id: number;
+}
+
+export const productService = {
+  getProducts: async (
+    params: ProductParams,
+  ): Promise<PaginatedProductsResponse> => {
+    const response = await api.get<PaginatedProductsResponse>("/products", {
+      params,
+    });
     return response.data;
+  },
+
+  createProduct: async (payload: CreateProductPayload): Promise<Product> => {
+    const response = await api.post<Product>("/products", payload);
+    return response.data;
+  },
+
+  updateProduct: async ({
+    id,
+    ...payload
+  }: UpdateProductPayload): Promise<Product> => {
+    const response = await api.put<Product>(`/products/${id}`, payload);
+    return response.data;
+  },
+
+  deleteProduct: async (id: number): Promise<void> => {
+    await api.delete(`/products/${id}`);
   },
 };

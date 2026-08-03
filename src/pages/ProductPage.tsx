@@ -1,7 +1,6 @@
-import React from "react";
-// import { useSearchParams } from "react-router-dom";
+import React, { useState } from "react";
 import { useProducts } from "../hooks/useProducts";
-import { useCategories } from "../hooks/useCategories"; // 1. Import hook mo
+import { useCategories } from "../hooks/useCategories";
 import { ProductTable } from "../components/ProductTable";
 import { Pagination } from "../components/Pagination";
 import { useProductFilters } from "../hooks/useProductFilters";
@@ -11,22 +10,110 @@ import {
   PackageSearch,
   Search,
   Filter,
+  Plus,
+  X,
 } from "lucide-react";
+
+interface ProductFormData {
+  id?: number;
+  name: string;
+  category_id: number;
+  price: number;
+  stock: number;
+  description?: string;
+}
 
 export const ProductsPage: React.FC = () => {
   const { filters, applyFilters, setPage, clearFilters } = useProductFilters();
 
-  const { data, isLoading, isFetching, isError } = useProducts(filters);
+  // Integrated CRUD hook
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    isSubmitting,
+  } = useProducts(filters);
 
   const { categories, isLoading: isCategoriesLoading } = useCategories();
 
-  const [searchInput, setSearchInput] = React.useState(filters.search);
-  const [categoryInput, setCategoryInput] = React.useState<number | undefined>(
+  // Local state for filter inputs
+  const [searchInput, setSearchInput] = useState(filters.search ?? "");
+  const [categoryInput, setCategoryInput] = useState<number | undefined>(
     filters.category_id,
   );
-  const [maxPriceInput, setMaxPriceInput] = React.useState<number | undefined>(
+  const [maxPriceInput, setMaxPriceInput] = useState<number | undefined>(
     filters.max_price,
   );
+
+  // Modal & Form state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductFormData | null>(
+    null,
+  );
+  const [formData, setFormData] = useState<ProductFormData>({
+    name: "",
+    category_id: 1,
+    price: 0,
+    stock: 0,
+    description: "",
+  });
+
+  // Open modal for Create
+  const handleOpenCreateModal = () => {
+    setEditingProduct(null);
+    setFormData({
+      name: "",
+      category_id: categories[0]?.id || 1,
+      price: 0,
+      stock: 0,
+      description: "",
+    });
+    setIsModalOpen(true);
+  };
+
+  // Open modal for Edit
+  const handleOpenEditModal = (product: any) => {
+    setEditingProduct(product);
+    setFormData({
+      id: product.id,
+      name: product.name,
+      category_id: product.category_id,
+      price: Number(product.price),
+      stock: Number(product.stock),
+      description: product.description || "",
+    });
+    setIsModalOpen(true);
+  };
+
+  // Submit Handler (Create or Update)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingProduct && editingProduct.id) {
+        await updateProduct({ id: editingProduct.id, ...formData });
+      } else {
+        await createProduct(formData);
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to save product:", error);
+    }
+  };
+
+  // Delete Handler
+  const handleDelete = async (id: number) => {
+    if (confirm("Are you sure you want to delete this product?")) {
+      try {
+        await deleteProduct(id);
+      } catch (error) {
+        console.error("Failed to delete product:", error);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -43,12 +130,22 @@ export const ProductsPage: React.FC = () => {
           </p>
         </div>
 
-        {isFetching && (
-          <div className="flex items-center text-xs font-mono text-razer-green gap-2 bg-razer-darkGreen/40 px-3 py-1.5 rounded border border-razer-green/30">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            FETCHING
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {isFetching && (
+            <div className="flex items-center text-xs font-mono text-razer-green gap-2 bg-razer-darkGreen/40 px-3 py-1.5 rounded border border-razer-green/30">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              FETCHING
+            </div>
+          )}
+
+          <button
+            onClick={handleOpenCreateModal}
+            className="flex items-center gap-2 rounded bg-razer-green px-4 py-2 text-sm font-bold text-black transition hover:bg-emerald-400 font-mono"
+          >
+            <Plus className="w-4 h-4" />
+            ADD PRODUCT
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -57,7 +154,6 @@ export const ProductsPage: React.FC = () => {
           {/* Search */}
           <div className="relative lg:col-span-5">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-
             <input
               type="text"
               placeholder="Search products..."
@@ -85,7 +181,6 @@ export const ProductsPage: React.FC = () => {
                   : "All Categories"}
               </option>
 
-              {/* 3. Dynamic Render gamit ang categories galing sa hook */}
               {categories.map((category) => (
                 <option
                   key={category.id}
@@ -101,7 +196,6 @@ export const ProductsPage: React.FC = () => {
           {/* Max Price */}
           <div className="relative lg:col-span-2">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-
             <input
               type="number"
               placeholder="Max Price"
@@ -134,7 +228,6 @@ export const ProductsPage: React.FC = () => {
             <button
               onClick={() => {
                 clearFilters();
-
                 setSearchInput("");
                 setCategoryInput(undefined);
                 setMaxPriceInput(undefined);
@@ -160,7 +253,11 @@ export const ProductsPage: React.FC = () => {
         </div>
       ) : data ? (
         <>
-          <ProductTable products={data.data} />
+          <ProductTable
+            products={data.data}
+            onEdit={handleOpenEditModal}
+            onDelete={handleDelete}
+          />
 
           <Pagination
             currentPage={data.current_page}
@@ -169,6 +266,129 @@ export const ProductsPage: React.FC = () => {
           />
         </>
       ) : null}
+
+      {/* CRUD Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-razer-card border border-razer-border rounded-lg w-full max-w-md p-6 relative space-y-4">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-xl font-bold font-mono text-white flex items-center gap-2">
+              <PackageSearch className="w-5 h-5 text-razer-green" />
+              {editingProduct ? "EDIT PRODUCT" : "CREATE PRODUCT"}
+            </h2>
+
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 text-sm font-mono"
+            >
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">
+                  Product Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 bg-razer-bg border border-razer-border rounded text-white focus:outline-none focus:border-razer-green"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">
+                  Category
+                </label>
+                <select
+                  required
+                  value={formData.category_id}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      category_id: Number(e.target.value),
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-razer-bg border border-razer-border rounded text-white focus:outline-none focus:border-razer-green"
+                >
+                  {categories.map((cat) => (
+                    <option
+                      key={cat.id}
+                      value={cat.id}
+                      className="bg-razer-card text-white"
+                    >
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        price: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-razer-bg border border-razer-border rounded text-white focus:outline-none focus:border-razer-green"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">
+                    Stock
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={formData.stock}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        stock: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-razer-bg border border-razer-border rounded text-white focus:outline-none focus:border-razer-green"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded bg-razer-green font-bold text-black hover:bg-emerald-400 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {editingProduct ? "SAVE CHANGES" : "CREATE"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
